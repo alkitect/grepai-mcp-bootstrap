@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "grepai": {
+      "command": "/home/USER/.local/bin/grepai",
+      "args": ["mcp-serve", "${workspaceFolder}"]
+    }
+  }
+}

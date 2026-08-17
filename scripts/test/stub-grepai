@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# Stub grepai for ci-check / tmp-HOME smoke (does not talk to Ollama).
+set -euo pipefail
+
+cmd="${1:-}"
+shift || true
+
+case "${cmd}" in
+  version)
+    echo "grepai version stub-0.0.0"
+    ;;
+  init)
+    mkdir -p .grepai
+    cat > .grepai/config.yaml <<'EOF'
+embedder: ollama
+store: gob
+last_index_time: 2026-01-01T00:00:00Z
+EOF
+    ;;
+  status)
+    echo "ok"
+    ;;
+  watch)
+    sub="${1:-}"
+    case "${sub}" in
+      --background) echo "started" ;;
+      --status)
+        echo "Status: running"
+        echo "Worktree ID: stub"
+        ;;
+      --stop) echo "stopped" ;;
+      *)
+        echo "unknown watch argv" >&2
+        exit 2
+        ;;
+    esac
+    ;;
+  "")
+    echo "missing command" >&2
+    exit 2
+    ;;
+  *)
+    echo "unknown argv: ${cmd}" >&2
+    exit 2
+    ;;
+esac

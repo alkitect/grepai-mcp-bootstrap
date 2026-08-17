@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+# Per-project grepai MCP glue: init index, merge Cursor/OpenCode JSON, optional watcher.
+set -euo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "${HERE}/lib/json_edit.py" ]]; then
+  JSON_EDIT="${HERE}/lib/json_edit.py"
+else
+  JSON_EDIT="${XDG_DATA_HOME:-${HOME}/.local/share}/grepai-mcp-bootstrap/json_edit.py"
+fi
+
+GREPAI_BIN="${GREPAI_BIN:-${HOME}/.local/bin/grepai}"
+DO_WATCH=0
+DO_OPENCODE=0
+DO_REMOVE=0
+
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") [--watch] [--opencode] [--remove]
+
+Run from anywhere inside a git work tree. Resolves the repo root with
+git rev-parse --show-toplevel.
+
+Default: grepai init, ensure .grepai/ is gitignored, merge Cursor MCP
+(mcpServers.grepai with literal \${workspaceFolder}).
+
+  --watch      also upsert the folderOpen VS Code/Cursor task
+  --opencode   also merge mcp.grepai into opencode.json (absolute repo path)
+  --remove     undo those keys in this repo only (combine with --watch/--opencode)
+
+Does not walk \$HOME. Invalid JSON exits 2 without writing.
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --watch) DO_WATCH=1; shift ;;
+    --opencode) DO_OPENCODE=1; shift ;;
+    --remove) DO_REMOVE=1; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *)
+      echo "Unknown option: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+
+if [[ ! -f "${JSON_EDIT}" ]]; then
+  echo "Missing JSON helper: ${JSON_EDIT}" >&2
+  echo "Run install-to-local.sh from the grepai-mcp-bootstrap clone." >&2
+  exit 2
+fi
+
+if ! ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"; then
+  echo "Not inside a git work tree." >&2
+  exit 2
+fi
+
+json_edit() {
+  python3 "${JSON_EDIT}" "$@"
+}
+
+if [[ "${DO_REMOVE}" -eq 1 ]]; then
+  json_edit remove-mcp "${ROOT}/.cursor/mcp.json"
+  if [[ "${DO_WATCH}" -eq 1 ]]; then
+    json_edit remove-task "${ROOT}/.vscode/tasks.json"
+  fi
+  if [[ "${DO_OPENCODE}" -eq 1 ]]; then
+    json_edit remove-opencode "${ROOT}/opencode.json"
+  fi
+  echo "Removed grepai MCP glue keys under ${ROOT}."
+  exit 0
+fi
+
+if [[ ! -x "${GREPAI_BIN}" ]]; then
+  echo "grepai not executable at ${GREPAI_BIN}. Run install-to-local.sh first." >&2
+  exit 2
+fi
+
+GREPAI_BIN="$(readlink -f "${GREPAI_BIN}")"
+
+cd "${ROOT}"
+"${GREPAI_BIN}" init --yes -p ollama -b gob
+
+GITIGNORE="${ROOT}/.gitignore"
+if [[ -f "${GITIGNORE}" ]]; then
+  if ! grep -qxF '.grepai/' "${GITIGNORE}"; then
+    printf '\n# grepai local index\n.grepai/\n' >> "${GITIGNORE}"
+    echo "Added .grepai/ to .gitignore"
+  fi
+else
+  printf '# grepai local index\n.grepai/\n' > "${GITIGNORE}"
+  echo "Created .gitignore with .grepai/"
+fi
+
+json_edit merge-mcp "${ROOT}/.cursor/mcp.json" "${GREPAI_BIN}"
+
+if [[ "${DO_OPENCODE}" -eq 1 ]]; then
+  json_edit merge-opencode "${ROOT}/opencode.json" "${GREPAI_BIN}" "${ROOT}"
+fi
+
+if [[ "${DO_WATCH}" -eq 1 ]]; then
+  json_edit merge-task "${ROOT}/.vscode/tasks.json"
+fi
+
+echo "Done. Restart Cursor and run: MCP: Show Status"
+echo "Do not add a global ~/.cursor/mcp.json grepai entry with bare mcp-serve."

@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+# Verify glue + project Cursor MCP file. Ollama/Cursor/watcher are WARN unless --strict.
+set -euo pipefail
+
+GREPAI_BIN="${GREPAI_BIN:-${HOME}/.local/bin/grepai}"
+STRICT=0
+FAIL=0
+
+for arg in "$@"; do
+  case "${arg}" in
+    --strict) STRICT=1 ;;
+    -h|--help)
+      echo "Usage: $(basename "$0") [--strict]"
+      echo "  Default: exit 0 without Ollama or Cursor (CI path)."
+      echo "  --strict: Ollama/Cursor/watcher WARN become FAIL."
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: ${arg}" >&2
+      exit 2
+      ;;
+  esac
+done
+
+ok() { echo "OK: $*"; }
+warn() {
+  echo "WARN: $*" >&2
+  if [[ "${STRICT}" -eq 1 ]]; then
+    FAIL=1
+  fi
+}
+fail() { echo "FAIL: $*" >&2; FAIL=1; }
+
+if ! ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"; then
+  ROOT="$(pwd)"
+  warn "not in a git work tree; using cwd ${ROOT}"
+fi
+
+PROJECT_MCP="${ROOT}/.cursor/mcp.json"
+
+echo "=== grepai binary ==="
+if [[ -x "${GREPAI_BIN}" ]]; then
+  ok "${GREPAI_BIN} ($("${GREPAI_BIN}" version 2>&1 | tr '\n' ' '))"
+else
+  fail "grepai not executable at ${GREPAI_BIN}"
+fi
+
+echo ""
+echo "=== Cursor MCP config ==="
+if [[ -f "${PROJECT_MCP}" ]]; then
+  if grep -q '"grepai"' "${PROJECT_MCP}" && grep -q 'mcp-serve' "${PROJECT_MCP}"; then
+    if grep -qF '${workspaceFolder}' "${PROJECT_MCP}"; then
+      ok "project ${PROJECT_MCP} (workspaceFolder)"
+    else
+      fail "project ${PROJECT_MCP} lacks \${workspaceFolder} — MCP may expose zero tools"
+    fi
+  else
+    fail "grepai mcp-serve entry missing in ${PROJECT_MCP}"
+  fi
+else
+  fail "no ${PROJECT_MCP} — run grepai-mcp-setup from the git repo"
+fi
+
+echo ""
+echo "=== Project index ==="
+if [[ -f "${ROOT}/.grepai/config.yaml" ]]; then
+  ok ".grepai/config.yaml exists"
+else
+  warn "no .grepai/ — run grepai-mcp-setup from a repo root"
+fi
+
+echo ""
+echo "=== Ollama ==="
+if command -v ollama >/dev/null 2>&1; then
+  ok "ollama $(ollama --version 2>&1 | head -1)"
+  if ollama list 2>/dev/null | grep -qE 'nomic-embed-text'; then
+    ok "nomic-embed-text model present"
+  else
+    warn "nomic-embed-text not in ollama list — run: ollama pull nomic-embed-text"
+  fi
+else
+  warn "ollama not in PATH (index will not build until it is)"
+fi
+
+echo ""
+echo "=== Cursor ==="
+if command -v cursor >/dev/null 2>&1; then
+  ok "cursor CLI in PATH"
+else
+  warn "cursor CLI not in PATH — cannot confirm MCP: Show Status"
+fi
+
+echo ""
+echo "=== Watcher (optional) ==="
+TASKS_FILE="${ROOT}/.vscode/tasks.json"
+if [[ -f "${TASKS_FILE}" ]] && grep -qE 'grepai: watch' "${TASKS_FILE}"; then
+  if grep -q 'scripts/grepai-watch-on-open.sh' "${TASKS_FILE}"; then
+    warn "tasks.json still points at a repo-local watcher script; re-run grepai-mcp-setup --watch"
+  elif grep -q 'grepai-watch-on-open' "${TASKS_FILE}"; then
+    ok "folder-open watcher task uses PATH grepai-watch-on-open"
+  else
+    warn "watcher task label present but command not recognized"
+  fi
+else
+  warn "no folder-open watcher task — optional: grepai-mcp-setup --watch"
+fi
+
+echo ""
+if [[ "${FAIL}" -eq 0 ]]; then
+  echo "Glue checks passed. User success: Cursor MCP: Show Status shows grepai tools."
+else
+  echo "Some checks failed."
+  exit 1
+fi

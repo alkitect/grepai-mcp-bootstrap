@@ -1,0 +1,5 @@
+.grepai/
+*.pyc
+__pycache__/
+.cursor/
+.vscode/

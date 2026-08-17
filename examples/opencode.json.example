@@ -1,0 +1,9 @@
+{
+  "mcp": {
+    "grepai": {
+      "type": "local",
+      "enabled": true,
+      "command": ["/home/USER/.local/bin/grepai", "mcp-serve", "/absolute/path/to/this/repo"]
+    }
+  }
+}
