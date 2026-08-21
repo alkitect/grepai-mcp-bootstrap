@@ -2,7 +2,7 @@
 
 Wire [grepai](https://github.com/yoanbernabeu/grepai) as a per-project MCP server for Cursor so local semantic search survives a restart.
 
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/alkitect)
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/alkitect/?hidefeed=true&widget=true&embed=true)
 
 ## What this does
 
@@ -98,4 +98,4 @@ This writes JSON under the current git repo and can download a grepai binary int
 
 MIT — see [LICENSE](LICENSE) (alkitect glue scripts). The downloaded grepai binary remains [yoanbernabeu/grepai](https://github.com/yoanbernabeu/grepai) under that project’s license. Pin: `GREPAI_VERSION` in `install-to-local.sh`.
 
-Optional tip jar: [ko-fi.com/alkitect](https://ko-fi.com/alkitect)
+Optional tip jar: [ko-fi.com/alkitect](https://ko-fi.com/alkitect/?hidefeed=true&widget=true&embed=true)
