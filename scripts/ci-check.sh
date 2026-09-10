@@ -21,9 +21,11 @@ if [[ -n "${hits}" ]]; then
   exit 1
 fi
 
-if grep -rE '/home/USER' --include='*.md' . --exclude-dir=.git --exclude='ci-check.sh' >/dev/null 2>&1; then
-  echo "ci-check: public markdown must not contain host home paths" >&2
-  grep -rE '/home/USER' --include='*.md' . --exclude-dir=.git --exclude='ci-check.sh' >&2 || true
+if grep -rE '/home/[A-Za-z0-9._-]+' --include='*.md' . \
+  --exclude-dir=.git --exclude='ci-check.sh' >/dev/null 2>&1; then
+  echo "ci-check: public markdown must not contain /home/<user> host paths" >&2
+  grep -rE '/home/[A-Za-z0-9._-]+' --include='*.md' . \
+    --exclude-dir=.git --exclude='ci-check.sh' >&2 || true
   exit 1
 fi
 
