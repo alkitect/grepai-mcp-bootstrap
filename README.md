@@ -2,7 +2,6 @@
 
 Wire [grepai](https://github.com/yoanbernabeu/grepai) as a per-project MCP server for Cursor so local semantic search survives a restart.
 
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/alkitect/?hidefeed=true&widget=true&embed=true)
 
 ## What this does
 
@@ -49,6 +48,12 @@ verify-grepai-mcp
 - If MCP shows zero tools: remove any global grepai MCP entry and restart Cursor.
 
 Maintainers: `./scripts/ci-check.sh`.
+
+## Support my work
+
+Tip jar for the next desktop fix. Or a coffee so the next script stays boring on purpose.
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/alkitect/?hidefeed=true&widget=true&embed=true)
 
 ## Uninstall
 
