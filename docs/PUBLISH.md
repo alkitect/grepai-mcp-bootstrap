@@ -6,13 +6,20 @@ README variant: D
 
 First public tag: v0.1.0
 
+Latest tag: **v0.1.1** (portal README rewrite)
+
 Default first tag is 0.1.0. Never copy another alkitect repo’s tag. Use `RC-BEFORE-1.0` in this file only for an intentional 0.9.x RC.
 
 ```bash
 ./scripts/ci-check.sh
-git tag -a v0.1.0 -m "v0.1.0"
+git tag -a v0.1.1 -m "v0.1.1"
 git push origin main
-git push origin v0.1.0
+git push origin v0.1.1
+gh release create v0.1.1 --title "v0.1.1" --notes-file - <<'EOF'
+## 0.1.1
+
+Portal README rewrite (two-repo Quick start, bare mcp-serve warning beside setup).
+EOF
 ```
 
 Repo URL: `https://github.com/alkitect/grepai-mcp-bootstrap`

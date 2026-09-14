@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.1.1 — 2026-09-14
+
+- Docs: portal README (Install bootstrap → Wire your repo → Restart; bare mcp-serve warning; Issues help).
+
 ## 0.1.0 — 2026-08-17
 
 - Initial public extract: `grepai-mcp-setup` glue for per-project Cursor MCP.
